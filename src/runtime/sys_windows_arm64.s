@@ -170,9 +170,14 @@ TEXT sigtramp<>(SB),NOSPLIT|NOFRAME,$0
 
 	BL      runtime·load_g(SB)	// smashes R0, R27, R28 (g)
 	CMP	$0, g			// is there a current g?
-	BNE	2(PC)
-	BL	runtime·badsignal2(SB)
-
+	BNE	g_ok
+        // this is a foreign thread, just give up
+	MOVD	R7, LR
+	MOVD	R16, R27	// restore R27
+	MOVD	R17, g		// restore R28
+	MOVD	$0, R0		// continue exception search
+	RET
+g_ok:
 	// Do we need to switch to the g0 stack?
 	MOVD	g, R3			// R3 = oldg (for sigtramp_g0)
 	MOVD	g_m(g), R2		// R2 = m
